@@ -1,0 +1,86 @@
+services:
+  # Update this to the name of the service you want to work with in your docker-compose.yml file
+
+
+  rds:
+    container_name: rds
+    image: redis:7.4-alpine
+
+    expose:
+      - 6379
+
+    ports:
+      - 6379:6379
+
+    networks:
+      - rdsn
+
+    volumes:
+      - data-rds:/data
+
+  api:
+  # Uncomment if you want to override the service's Dockerfile to one in the .devcontainer
+  # folder. Note that the path of the Dockerfile and context is relative to the *primary*
+  # docker-compose.yml file (the first in the devcontainer.json "dockerComposeFile"
+  # array). The sample below assumes your primary file is in the root of your project.
+  #
+    build:
+      #target: dev
+      context: .
+      dockerfile: dockerfile
+
+    ports:
+      - 3000:3000
+
+
+    environment:
+        NODE_ENV: development
+
+    volumes:
+    # Update this to wherever you want VS Code to mount the folder of your project
+        - ./api:/home/node/api:cached
+        - /var/lib/data:/home/node/data
+
+    networks:
+        - bcn
+        - rdsn
+
+    depends_on:
+      bitcoind:
+        condition: service_started
+
+    # Uncomment the next four lines if you will use a ptrace-based debugger like C++, Go, and Rust.
+    # cap_add:
+    #   - SYS_PTRACE
+    # security_opt:
+    #   - seccomp:unconfined
+
+    # Overrides default command so things don't shut down after the process ends.
+    command: sleep infinity
+
+
+  bitcoind:
+    image: bitcoindevelopernetwork/bitcoind-regtest
+
+    ports:
+      - 18444:18444
+
+    expose:
+      - 290000
+      - 18332
+
+    volumes:
+      - /var/lib/data:/bitcoin
+
+    networks:
+      - bcn
+
+networks:
+  bcn:
+    name: bcn
+
+  rdsn:
+    name: rdsn
+
+volumes:
+      data-rds:

@@ -1,0 +1,17 @@
+## Create Walled
+bitcoin-cli createwallet "testwallet"
+
+## Generate 101 new bitcoin, reward to testwallet
+bitcoin-cli -rpcwallet=testwallet generate 101
+
+## Get a new address
+bitcoin-cli -rpcwallet=testwallet getnewaddress
+
+## Get transaction info for transaction ID
+bitcoin-cli -rpcwallet=testwallet gettransaction e0b7a812317b23c217d4aba23aa808bffe171e8f92197dd254c1e8043107f625
+
+## Get Wallet balance
+bitcoin-cli -rpcwallet=testwallet getbalance
+
+## Send bitcoin to address
+bitcoin-cli -rpcwallet=testwallet -named sendtoaddress address=2N3UfrhqtfHM5y9RyAs9rtNhufLnDXxw8EP amount=10.0

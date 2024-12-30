@@ -1,0 +1,64 @@
+{
+    "files.insertFinalNewline": true,
+    "editor.formatOnSave": true,
+    "editor.renderWhitespace": "all",
+    "editor.fontLigatures": true,
+    "prettier.tabWidth": 4,
+    "prettier.useTabs": false,
+    "typescript.preferences.importModuleSpecifier": "relative",
+    "[jsonc]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[html]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "material-icon-theme.activeIconPack": "nest",
+    "material-icon-theme.folders.associations": {
+        "entities": "database",
+        "dto": "custom",
+        "enum": "enum",
+        // "interface": "tasks",
+        "jwe": "keys",
+        "user-token": "keys"
+    },
+    "material-icon-theme.files.customClones": [
+        {
+            "name": "nest-dto",
+            "base": "nest",
+            "color": "orange-800"
+        },
+        {
+            "name": "nest-enum",
+            "base": "nest",
+            "color": "cyan-500"
+        },
+        {
+            "name": "nest-factory",
+            "base": "nest",
+            "color": "grey"
+        },
+        {
+            "name": "nest-interface",
+            "base": "nest",
+            "color": "blue-300"
+        }
+    ],
+    "material-icon-theme.files.associations": {
+        "**.entity.ts": "database",
+        "**.dto.ts": "nest-dto",
+        "swagger.ts": "swagger",
+        "**.enum.ts": "nest-enum",
+        "**.interface.ts": "nest-interface",
+        "**.factory.ts": "nest-factory"
+    }
+}
