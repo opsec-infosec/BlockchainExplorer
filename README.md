@@ -17,6 +17,9 @@ REDIS is used to process the blocks and transactions, the block files are queued
 ## API
 The api is using the NestJS framework
 
+## bitcoind Full Node
+This is the bitcoind full node. Be aware that the current blockchain is over 600 G in size, so make sure you have enough disk space for that.
+
 ## Workers
 There are 2 workers setup to process the .dat files. The main queue EQueue.Block parses the the .dat file and pulls out each individual block, parses it and passes it to a second queue called EQueue.Elastic
 The EQueue.Elastic queue processes each transaction of the block and will store them in a ElasticSearch DB.
