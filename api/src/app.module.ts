@@ -5,8 +5,9 @@ import { ZmqueueModule } from './services/zmqueue/zmqueue.module'
 import { BlocksyncModule } from './blocksync/blocksync.module'
 import { QueueModule } from './services/queue/queue.module'
 import { ConfigModule } from '@nestjs/config'
+import { ElastichModule } from './services/elasticsearch/elasticsearch.module'
 
-const modules = [ZmqueueModule, BlocksyncModule, QueueModule]
+const modules = [ZmqueueModule, BlocksyncModule, QueueModule, ElastichModule]
 
 @Module({
     imports: [ConfigModule.forRoot({ isGlobal: true }), ...modules],

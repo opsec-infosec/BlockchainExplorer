@@ -4,7 +4,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { redisFactory } from '../../factories/redis.factory'
 import { BlkProcessor } from './block.workers'
 import { EQueue } from '../../enum/queue.enum'
-import { ElasticProcessor } from './elastic.worker'
+import { TransactionsProcessor } from './transactions.worker'
+import { ElastichModule } from '../elasticsearch/elasticsearch.module'
 
 @Module({
     imports: [
@@ -14,8 +15,9 @@ import { ElasticProcessor } from './elastic.worker'
             useFactory: redisFactory,
             inject: [ConfigService],
         }),
-        BullModule.registerQueueAsync({ name: EQueue.Block }, { name: EQueue.Elastic }),
+        BullModule.registerQueueAsync({ name: EQueue.Block }, { name: EQueue.Transactions }),
+        ElastichModule,
     ],
-    providers: [BlkProcessor, ElasticProcessor],
+    providers: [BlkProcessor, TransactionsProcessor],
 })
 export class WorkersModule {}

@@ -20,3 +20,10 @@ export interface ITrasactions {
     txos: ITrasactionOut[]
     txis: ITrasactionIn[]
 }
+
+export interface IBlockInfo {
+    hash: string
+    prevHash: string
+    blockDate: Date
+    txCount: number
+}

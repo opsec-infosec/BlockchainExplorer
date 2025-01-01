@@ -1,9 +1,9 @@
 export enum EJobQueue {
     BlockParse = 'block.parse',
-    ElasticStore = 'elastic.store',
+    TransactionParse = 'transactions.parse',
 }
 
 export enum EQueue {
     Block = 'block',
-    Elastic = 'elastic',
+    Transactions = 'transactions',
 }

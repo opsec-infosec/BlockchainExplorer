@@ -1,6 +1,74 @@
 services:
   # Update this to the name of the service you want to work with in your docker-compose.yml file
 
+  es01:
+    container_name: es01
+    image: elasticsearch:8.16.0
+
+    environment:
+        - node.name=es01
+        - http.port=${ELASTIC_PORT}
+        - http.host=0.0.0.0
+        - transport.host=127.0.0.1
+        - xpack.security.enabled=false
+        - xpack.monitoring.collection.enabled=true
+        - cluster.name=esc
+        - discovery.type=single-node
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+    expose:
+      - 9200
+
+    ports:
+      - 9200:${ELASTIC_PORT}
+
+    networks:
+      - esn
+
+    volumes:
+      - data-es01:/usr/share/elasticsearch/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail -u elastic:${ELASTIC_PASSWORD}  http://es01:9200",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+      start_period: 10s
+
+
+  kibana:
+    container_name: kibana
+    image: kibana:8.16.0
+
+    environment:
+      - SERVER_NAME=kibana
+      - ELASTICSEARCH_HOSTS=http://es01:9200
+
+    ports:
+      - 5601:5601
+
+    networks:
+      - esn
+
+    volumes:
+      - data-kibana:/usr/share/kibana/data
+
+
+    depends_on:
+      es01:
+        condition: service_healthy
+
 
   rds:
     container_name: rds
@@ -29,12 +97,16 @@ services:
       context: .
       dockerfile: dockerfile
 
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - ELASTIC_HOSTS=http://es01:${ELASTIC_PORT}
+      - DATA_PATH=${DATA_PATH}
+      - LATEST_FIRST=${LATEST_FIRST}
+      - NODE_ENV=development
+
     ports:
       - 3000:3000
-
-
-    environment:
-        NODE_ENV: development
 
     volumes:
     # Update this to wherever you want VS Code to mount the folder of your project
@@ -43,6 +115,7 @@ services:
 
     networks:
         - bcn
+        - esn
         - rdsn
 
     depends_on:
@@ -82,5 +155,10 @@ networks:
   rdsn:
     name: rdsn
 
+  esn:
+    name: esn
+
 volumes:
-      data-rds:
+  data-rds:
+  data-es01:
+  data-kibana:

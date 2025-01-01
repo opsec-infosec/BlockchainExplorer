@@ -10,6 +10,8 @@ From there we have a full text search of the block chain.
 * REDIS
 * API / Workers - NestJS
 * bitcoind - Full Node
+* elasticsearch - standalone
+* kibana - frontend for elasticsearch
 
 ## Redis
 REDIS is used to process the blocks and transactions, the block files are queued into redis using BullMQ.  Each block is parsed and then placed into a second queue to further process each block transaction
@@ -19,6 +21,16 @@ The api is using the NestJS framework
 
 ## bitcoind Full Node
 This is the bitcoind full node. Be aware that the current blockchain is over 600 G in size, so make sure you have enough disk space for that.
+
+## Elasticsearch
+This is a standalone elastic search instance (non clustered) and no security setup. It is advisable to setup the x-pack-security features if you plan on have a public instance. The queues will create 2 indicies called blocks and transactions.
+### blocks
+Contain the block information, hash, previous hash, date (timestamp), and number of transactions. index id is the hash of the block
+### transactions
+Contain the txins and txouts of the transactions. index id is the transaction id hash.
+
+## Kibana
+This is the frontend for exploring the data in elastic search with no security setup. It is advised to setup the x-pack-security features if you plan on having a public accessable instance.
 
 ## Workers
 There are 2 workers setup to process the .dat files. The main queue EQueue.Block parses the the .dat file and pulls out each individual block, parses it and passes it to a second queue called EQueue.Elastic

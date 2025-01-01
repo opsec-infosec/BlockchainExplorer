@@ -36,8 +36,13 @@ export class ReadFileBlock {
 
     private async getMagicId() {
         const magicId = this.buff.readUInt32LE(this.blockOffset).toString(16)
+
+        if (magicId === '0') {
+            throw new Error(`Incomplete Block @${this.blockOffset}`)
+        }
+
         if (magicId !== 'd9b4bef9') {
-            throw new Error('Invalid Magic ID')
+            throw new Error(`Invalid Magic ID @${this.blockOffset}`)
         }
 
         return magicId
@@ -61,7 +66,6 @@ export class BlockInfo {
     }
 
     static getInfo(blk: Block) {
-        const tmp = blk.getHash()
         const hashes = this.getHash(blk)
         const blockDate = blk.getUTCDate()
         const txCount = blk.transactions.length
@@ -93,20 +97,25 @@ export class BlockInfo {
             })
 
             txos = data.outs.map((outs) => {
-                let addr: string
+                let addr: string = undefined
                 let value: number
 
                 try {
                     value = outs.value / 100000000
                     addr = address.fromOutputScript(Buffer.from(outs.script), networks.bitcoin)
                 } catch (e) {
-                    const length = outs.script[0]
-                    const pubkey = Buffer.from(outs.script).subarray(1, length + 1)
-                    let addr = null
                     try {
+                        const length = outs.script[0]
+                        const pubkey = Buffer.from(outs.script).subarray(1, length + 1)
                         addr = payments.p2pkh({ pubkey }).address
                     } catch (e) {
-                        console.log(e)
+                        try {
+                            const length = outs.script[2]
+                            const pubkey = Buffer.from(outs.script).subarray(3, length + 3)
+                            addr = payments.p2pkh({ pubkey }).address
+                        } catch (e) {
+                            // if we get here, its an unknown address
+                        }
                     }
                 }
 
