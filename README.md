@@ -1,9 +1,11 @@
 # Bitcoin Explorer
-Place to have fun with decoding and learning about the bitcoin blockchain
+Place to have fun and learn about decoding the bitcoin blockchain
 
-The goal is to parse the block chain from a full bitcoin node, parse the files, and push them into a ElasticSearch stack.
+The goal is to parse the block chain from a full bitcoin node, parse the files into block and transaction information, and push them into a ElasticSearch stack.
 
 From there we have a full text search of the block chain.
+
+Eventually a frontend for exploring the blockchain and the ability to do some basic analysis of the chain.
 
 
 # Containers
