@@ -2,6 +2,6 @@
     "$schema": "https://json.schemastore.org/nest-cli",
     "collection": "@nestjs/schematics",
     "sourceRoot": "src",
-    "entryFile": "workers",
+    "entryFile": "blocks",
     "compilerOptions": {}
 }

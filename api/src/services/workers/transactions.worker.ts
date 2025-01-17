@@ -1,11 +1,11 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq'
-import { EQueue } from '../../enum/queue.enum'
+import { EJobQueue, EQueue } from '../../enum/queue.enum'
 import { Job } from 'bullmq'
 import { Inject, Logger } from '@nestjs/common'
 import { Block } from 'bitcoinjs-lib'
 import { EsSearchService } from '../elasticsearch/elasticsearch.service'
 import { ElasticsearchService } from '@nestjs/elasticsearch'
-import { BlockInfo } from './block'
+import { BlockInfo } from '../utilities/block'
 
 @Processor(EQueue.Transactions)
 export class TransactionsProcessor extends WorkerHost {
@@ -47,10 +47,10 @@ export class TransactionsProcessor extends WorkerHost {
         job.updateProgress(100)
     }
 
-    @OnWorkerEvent('completed')
-    onCompleted(job: Job<string, any, string>) {
-        //this.logger.log(`Job ${job.id} ${job.name.toUpperCase()} Completed`)
-    }
+    // @OnWorkerEvent('completed')
+    // onComplete(job: Job<string, any, string>) {
+    //     this.logger.log(`Job ${job.id} ${job.name.toUpperCase()} Completed`)
+    // }
 
     @OnWorkerEvent('failed')
     onFailed(job: Job<string, any, string>) {

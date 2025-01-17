@@ -11,8 +11,14 @@
             "type": "node-terminal"
         },
         {
-            "command": "npm run start:debug:queue",
-            "name": "queue",
+            "command": "npm run start:debug:queue:blocks",
+            "name": "queue blocks",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+        {
+            "command": "npm run start:debug:queue:transactions",
+            "name": "queue transactions",
             "request": "launch",
             "type": "node-terminal"
         },

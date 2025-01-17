@@ -1,7 +1,4 @@
-import { BulkJobOptions } from 'bullmq'
-
-export interface IBullMqJob {
-    name: string
-    data: any
-    opts?: BulkJobOptions
+export interface IBlockData {
+    file: string
+    complete: boolean
 }

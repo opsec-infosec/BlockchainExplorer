@@ -8,8 +8,8 @@ export const redisFactory = async (config: ConfigService) => {
         },
         defaultJobOptions: {
             attempts: 10,
-            removeOnComplete: 500,
-            delay: 5000,
+            removeOnComplete: true,
+            removeonFailed: true,
             backoff: {
                 type: 'exponential',
                 delay: 1000,

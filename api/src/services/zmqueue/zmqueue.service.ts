@@ -1,4 +1,9 @@
-import { BeforeApplicationShutdown, Injectable, OnApplicationShutdown } from '@nestjs/common'
+import {
+    BeforeApplicationShutdown,
+    Injectable,
+    Logger,
+    OnApplicationShutdown,
+} from '@nestjs/common'
 import * as zmq from 'zeromq'
 import { OnModuleInit } from '@nestjs/common'
 import { address, Block, networks, Transaction, script } from 'bitcoinjs-lib'
@@ -7,6 +12,7 @@ import { readFile, readFileSync } from 'fs'
 @Injectable()
 export class ZmqueueService {
     // implements OnModuleInit, BeforeApplicationShutdown {
+    private logger = new Logger('ZmqueueService')
     private sock = new zmq.Subscriber()
 
     constructor() {
@@ -27,6 +33,7 @@ export class ZmqueueService {
         })
 
         this.sock.subscribe('rawblock')
+        this.logger.log('Subscribe to ZeroMq Publisher')
     }
 
     // async onModuleInit() {

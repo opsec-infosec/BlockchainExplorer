@@ -1,9 +1,9 @@
 import { NestFactory } from '@nestjs/core'
 import { ConfigModule, ConfigService } from '@nestjs/config'
-import { WorkersModule } from './services/workers/workers.module'
+import { BlockModule } from './services/workers/block.module'
 
 async function bootstrap() {
-    const app = await NestFactory.createApplicationContext(WorkersModule)
+    const app = await NestFactory.createApplicationContext(BlockModule)
     const config = app.get(ConfigService)
     ConfigModule.forRoot({ isGlobal: true })
 

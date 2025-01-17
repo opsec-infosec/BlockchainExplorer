@@ -1,20 +1,22 @@
-import { BullModule } from '@nestjs/bullmq'
 import { Module } from '@nestjs/common'
+import { BullModule } from '@nestjs/bullmq'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { redisFactory } from '../../factories/redis.factory'
-import { QueueService } from './queue.service'
 import { EQueue } from '../../enum/queue.enum'
+import { TransactionsProcessor } from './transactions.worker'
+import { ElastichModule } from '../elasticsearch/elasticsearch.module'
 
 @Module({
     imports: [
+        ConfigModule.forRoot({ isGlobal: true }),
         BullModule.forRootAsync({
             imports: [ConfigModule],
             useFactory: redisFactory,
             inject: [ConfigService],
         }),
-        BullModule.registerFlowProducer({ name: EQueue.Block }),
+        BullModule.registerQueue({ name: EQueue.Transactions }),
+        ElastichModule,
     ],
-    exports: [QueueService],
-    providers: [QueueService],
+    providers: [TransactionsProcessor],
 })
-export class QueueModule {}
+export class TransactionModule {}

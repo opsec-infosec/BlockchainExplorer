@@ -1,8 +1,7 @@
-import { InjectQueue } from '@nestjs/bullmq'
+import { InjectFlowProducer } from '@nestjs/bullmq'
 import { Injectable } from '@nestjs/common'
 import { EJobQueue, EQueue } from '../../enum/queue.enum'
-import { Queue } from 'bullmq'
-import { IBullMqJob } from '../../interfaces/queue.interface'
+import { FlowJob, FlowProducer } from 'bullmq'
 import { ConfigService } from '@nestjs/config'
 
 @Injectable()
@@ -11,16 +10,35 @@ export class QueueService {
         String(this.configService.get<boolean>('LATEST_FIRST', false)).toLowerCase() == 'true'
 
     constructor(
-        @InjectQueue(EQueue.Block) private blockParse: Queue,
+        @InjectFlowProducer(EQueue.Block) private blockFlowParse: FlowProducer,
         private configService: ConfigService,
     ) {}
 
     async addBlockJob(file: string) {
-        this.blockParse.add(EJobQueue.BlockParse, file, { jobId: file, lifo: true })
+        this.blockFlowParse.add(
+            {
+                name: EJobQueue.BlockParse,
+                data: { file: file, complete: false },
+                queueName: EQueue.Block,
+                opts: { jobId: file, priority: 1 },
+                children: [],
+            },
+            {
+                queuesOptions: {
+                    [EQueue.Block]: {
+                        defaultJobOptions: {
+                            removeOnComplete: false,
+                            removeOnFail: 500,
+                            delay: 10000,
+                        },
+                    },
+                },
+            },
+        )
     }
 
     async addBulkBlockJob(files: string[]) {
-        const bulkReq: IBullMqJob[] = []
+        const bulkReq: FlowJob[] = []
 
         if (this.latestFirst) {
             files.sort((a, b) => b.localeCompare(a))
@@ -29,11 +47,20 @@ export class QueueService {
         files.forEach((file) => {
             bulkReq.push({
                 name: EJobQueue.BlockParse,
-                data: file,
-                opts: { jobId: file },
+                data: { file: file, complete: false },
+                queueName: EQueue.Block,
+                children: [],
+                opts: {
+                    jobId: file,
+                    priority: 1,
+                    removeOnComplete: true,
+                    removeOnFail: 500,
+                },
             })
         })
 
-        this.blockParse.addBulk(bulkReq)
+        await this.blockFlowParse.addBulk(bulkReq).catch((ex) => {
+            throw ex
+        })
     }
 }
