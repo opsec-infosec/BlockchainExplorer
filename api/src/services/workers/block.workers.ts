@@ -4,7 +4,7 @@ import { Inject, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { readFileSync } from 'fs'
 import { BlockInfo, ReadFileBlock } from '../utilities/block'
-import { EJobQueue, EQueue } from '../../enum/queue.enum'
+import { EJobQueue, EQueue, EQueuePriority } from '../../enum/queue.enum'
 import { ElasticsearchService } from '@nestjs/elasticsearch'
 import { EsSearchService } from '../elasticsearch/elasticsearch.service'
 import { IBlockData } from '../../interfaces/queue.interface'
@@ -31,15 +31,20 @@ export class BlkProcessor extends WorkerHost {
                 )
                 job.updateProgress(100)
                 return
-            } else if (this.wait !== undefined) {
-                await job.changePriority({ priority: 0 })
+            } else {
+                await job.changePriority({ priority: EQueuePriority.Completed })
                 job.moveToDelayed(Date.now())
                 throw new DelayedError()
             }
         }
 
         if (this.wait) {
-            job.moveToDelayed(Date.now() + 30000, token)
+            if (job.failedReason) {
+                throw new Error(job.failedReason)
+            }
+
+            const seconds = this.randomSeconds(5, 30) * 1000
+            job.moveToDelayed(Date.now() + seconds, token)
             throw new DelayedError()
         }
 
@@ -55,6 +60,7 @@ export class BlkProcessor extends WorkerHost {
         })
 
         let recDone = blk.length
+        let txCount = 0
 
         for (const b of blk) {
             await this.esSearch
@@ -83,21 +89,29 @@ export class BlkProcessor extends WorkerHost {
                             removeOnComplete: true,
                             removeOnFail: 500,
                         })
+
+                        txCount++
                     }
                 })
             job.updateProgress(((blk.length - recDone) / blk.length) * 100)
             recDone--
         }
 
-        await job.updateData({ complete: true, file: job.data.file })
+        if (txCount) {
+            await job.updateData({ complete: true, file: job.data.file })
+            await job.changePriority({ priority: EQueuePriority.Processed })
+            await job.moveToWaitingChildren(token)
+            this.wait = job.id
 
-        await job.moveToWaitingChildren(token)
-        this.wait = job.id
+            this.logger.log(
+                `Job ${job.id} ${job.name.toUpperCase()} Waiting for Transactions to Complete`,
+            )
+            throw new WaitingChildrenError()
+        }
+    }
 
-        this.logger.log(
-            `Job ${job.id} ${job.name.toUpperCase()} Waiting for Transactions to Complete`,
-        )
-        throw new WaitingChildrenError()
+    private randomSeconds(min: number, max: number) {
+        return Math.floor(Math.random() * (max - min + 1) + min)
     }
 
     @OnWorkerEvent('completed')

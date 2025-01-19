@@ -12,7 +12,6 @@ RUN apt-get update && apt-get install \
     iputils-ping \
     procps \
     sudo \
-    awscli \
     dialog \
     curl \
     -y \
@@ -22,7 +21,8 @@ RUN apt-get update && apt-get install \
     && rm -rf /var/lib/{apt,dpkg,cache,log}/ \
     && echo "git config --global --add safe.directory /home/node/api" >> /home/node/.bashrc
 
-RUN mkdir -p dist && mkdir -p node_modules && npm install -g npm@latest  && chown -R node:node node_modules && chown -R node:node dist && npm i -g @nestjs/cli
+RUN mkdir -p dist && mkdir -p node_modules && npm install -g npm@latest && chown -R node:node node_modules && chown -R node:node dist && npm i -g @nestjs/cli
+RUN  npm i -g pm2@latest
 USER node
 
 # Reset dialog frontend
@@ -32,5 +32,5 @@ ENV DEBIAN_FRONTEND=dialog
 ## DEVELOPMENT -- From Built from nestjs base image
 FROM base
 WORKDIR /home/node/api
-COPY --chown=node:node api/ ./
+COPY --chown=node:node ./ ./
 USER node

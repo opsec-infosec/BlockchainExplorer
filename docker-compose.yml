@@ -91,7 +91,7 @@ services:
   #
     build:
       #target: dev
-      context: .
+      context: ./api
       dockerfile: dockerfile
 
     environment:

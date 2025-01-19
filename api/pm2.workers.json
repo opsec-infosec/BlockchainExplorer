@@ -1,0 +1,10 @@
+{
+    "apps": [
+        {
+            "name": "Transactions",
+            "script": "dist/transactions.js",
+            "autorestart": true,
+            "instances": 12
+        }
+    ]
+}

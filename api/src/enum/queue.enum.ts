@@ -7,3 +7,9 @@ export enum EQueue {
     Block = 'block',
     Transactions = 'transactions',
 }
+
+export enum EQueuePriority {
+    Completed,
+    Processed,
+    Queue
+}

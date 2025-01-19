@@ -1,6 +1,6 @@
 import { InjectFlowProducer } from '@nestjs/bullmq'
 import { Injectable } from '@nestjs/common'
-import { EJobQueue, EQueue } from '../../enum/queue.enum'
+import { EJobQueue, EQueue, EQueuePriority } from '../../enum/queue.enum'
 import { FlowJob, FlowProducer } from 'bullmq'
 import { ConfigService } from '@nestjs/config'
 
@@ -20,16 +20,22 @@ export class QueueService {
                 name: EJobQueue.BlockParse,
                 data: { file: file, complete: false },
                 queueName: EQueue.Block,
-                opts: { jobId: file, priority: 1 },
+                opts: { jobId: file, priority: EQueuePriority.Queue },
                 children: [],
             },
             {
                 queuesOptions: {
                     [EQueue.Block]: {
                         defaultJobOptions: {
+                            priority: EQueuePriority.Queue,
                             removeOnComplete: false,
                             removeOnFail: 500,
                             delay: 10000,
+                            attempts: 10,
+                            backoff: {
+                                type: 'exponential',
+                                delay: 1000,
+                            },
                         },
                     },
                 },
@@ -52,9 +58,15 @@ export class QueueService {
                 children: [],
                 opts: {
                     jobId: file,
-                    priority: 1,
-                    removeOnComplete: true,
+                    priority: EQueuePriority.Queue,
+                    removeOnComplete: false,
                     removeOnFail: 500,
+                    delay: 10000,
+                    attempts: 10,
+                    backoff: {
+                        type: 'exponential',
+                        delay: 1000,
+                    },
                 },
             })
         })
