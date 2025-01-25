@@ -47,10 +47,10 @@ export class TransactionsProcessor extends WorkerHost {
         job.updateProgress(100)
     }
 
-    // @OnWorkerEvent('completed')
-    // onComplete(job: Job<string, any, string>) {
-    //     this.logger.log(`Job ${job.id} ${job.name.toUpperCase()} Completed`)
-    // }
+    @OnWorkerEvent('completed')
+    onComplete(job: Job<string, any, string>) {
+        this.logger.log(`Job ${job.id} ${job.name.toUpperCase()} Completed`)
+    }
 
     @OnWorkerEvent('failed')
     onFailed(job: Job<string, any, string>) {

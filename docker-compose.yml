@@ -9,11 +9,13 @@ services:
         - node.name=es01
         - http.port=${ELASTIC_PORT}
         - http.host=0.0.0.0
-        - transport.host=127.0.0.1
+        - transport.host=0.0.0.0
         - xpack.security.enabled=false
         - xpack.monitoring.collection.enabled=true
         - cluster.name=esc
-        - discovery.type=single-node
+        #- discovery.type=single-node
+        - discovery.seed_hosts=es02,es03
+        # - cluster.initial_master_nodes=es01 # DISABLE AFTER CLUSER HAS FORMED
         - bootstrap.memory_lock=true
         - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
@@ -25,6 +27,7 @@ services:
 
     expose:
       - 9200
+      - 9300
 
     ports:
       - 9200:${ELASTIC_PORT}
@@ -46,6 +49,95 @@ services:
       retries: 120
       start_period: 10s
 
+  es02:
+    container_name: es02
+    image: elasticsearch:8.16.0
+
+    environment:
+        - node.name=es02
+        - http.port=${ELASTIC_PORT}
+        - http.host=0.0.0.0
+        - transport.host=0.0.0.0
+        - xpack.security.enabled=false
+        - xpack.monitoring.collection.enabled=true
+        - cluster.name=esc
+        #- discovery.type=single-node
+        - discovery.seed_hosts=es01,es03
+        # - cluster.initial_master_nodes=es01 # DISABLE AFTER CLUSER HAS FORMED
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+    expose:
+      - 9200
+      - 9300
+
+    networks:
+      - esn
+
+    volumes:
+      - data-es02:/usr/share/elasticsearch/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail -u elastic:${ELASTIC_PASSWORD}  http://es02:9200",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+      start_period: 10s
+
+  es03:
+    container_name: es03
+    image: elasticsearch:8.16.0
+
+    environment:
+        - node.name=es03
+        - http.port=${ELASTIC_PORT}
+        - http.host=0.0.0.0
+        - transport.host=0.0.0.0
+        - xpack.security.enabled=false
+        - xpack.monitoring.collection.enabled=true
+        - cluster.name=esc
+        #- discovery.type=single-node
+        - discovery.seed_hosts=es01,es02
+        # - cluster.initial_master_nodes=es01 # DISABLE AFTER CLUSER HAS FORMED
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+    expose:
+      - 9200
+      - 9300
+
+    networks:
+      - esn
+
+    volumes:
+      - data-es03:/usr/share/elasticsearch/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail -u elastic:${ELASTIC_PASSWORD}  http://es03:9200",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+      start_period: 10s
 
   kibana:
     container_name: kibana
@@ -67,6 +159,10 @@ services:
 
     depends_on:
       es01:
+        condition: service_healthy
+      es02:
+        condition: service_healthy
+      es03:
         condition: service_healthy
 
 
@@ -160,4 +256,6 @@ networks:
 volumes:
   data-rds:
   data-es01:
+  data-es02:
+  data-es03:
   data-kibana:

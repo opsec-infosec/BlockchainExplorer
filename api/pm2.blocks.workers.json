@@ -1,0 +1,10 @@
+{
+    "apps": [
+        {
+            "name": "Blocks",
+            "script": "dist/blocks.js",
+            "autorestart": true,
+            "instances": 3
+        }
+    ]
+}
