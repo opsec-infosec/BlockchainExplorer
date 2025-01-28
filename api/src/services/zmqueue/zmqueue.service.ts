@@ -13,27 +13,22 @@ import { readFile, readFileSync } from 'fs'
 export class ZmqueueService {
     // implements OnModuleInit, BeforeApplicationShutdown {
     private logger = new Logger('ZmqueueService')
-    private sock = new zmq.Subscriber()
+    // private sock = new zmq.Subscriber()
 
     constructor() {
-        this.sock.connect('tcp://bitcoind:29000')
-
-        const tmp = this.sock.events
-
-        tmp.on('unknown', (data) => {
-            console.log(data)
-        })
-
-        tmp.on('accept', (data) => {
-            console.log(data)
-        })
-
-        tmp.on('connect', (data) => {
-            console.log(data)
-        })
-
-        this.sock.subscribe('rawblock')
-        this.logger.log('Subscribe to ZeroMq Publisher')
+        // this.sock.connect('tcp://bitcoind:29000')
+        // const tmp = this.sock.events
+        // tmp.on('unknown', (data) => {
+        //     console.log(data)
+        // })
+        // tmp.on('accept', (data) => {
+        //     console.log(data)
+        // })
+        // tmp.on('connect', (data) => {
+        //     console.log(data)
+        // })
+        // this.sock.subscribe('rawblock')
+        // this.logger.log('Subscribe to ZeroMq Publisher')
     }
 
     // async onModuleInit() {

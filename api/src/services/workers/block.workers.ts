@@ -12,7 +12,7 @@ import { IBlockData } from '../../interfaces/queue.interface'
 @Processor(EQueue.Block)
 export class BlkProcessor extends WorkerHost {
     private dataPath = this.configService.getOrThrow('DATA_PATH')
-    private logger = new Logger('BlockProcessor')
+    private logger = new Logger(`BlockProcessor`)
     private wait = undefined
 
     constructor(
@@ -25,13 +25,24 @@ export class BlkProcessor extends WorkerHost {
 
     async process(job: Job<IBlockData, any, any>, token?: string) {
         if (job.data.complete) {
-            if (this.wait === job.id) {
+            if (
+                this.wait === job.id ||
+                (job.data.timestamp && Date.now() - job.data.timestamp >= 600000)
+            ) {
                 this.logger.log(
                     `Job ${job.id} ${job.name.toUpperCase()} Transactions and Block Complete`,
                 )
                 job.updateProgress(100)
                 return
             } else {
+                if (!job.data.timestamp) {
+                    job.updateData({
+                        file: job.data.file,
+                        complete: job.data.complete,
+                        timestamp: Date.now(),
+                    })
+                }
+
                 await job.changePriority({ priority: EQueuePriority.Completed })
                 job.moveToDelayed(Date.now())
                 throw new DelayedError()
@@ -63,9 +74,11 @@ export class BlkProcessor extends WorkerHost {
         let txCount = 0
 
         for (const b of blk) {
+            const year = b.getUTCDate().getUTCFullYear()
+
             await this.esSearch
                 .create({
-                    index: 'blocks',
+                    index: `blocks-${year}`,
                     id: BlockInfo.getHash(b).hash,
                     document: { ...BlockInfo.getInfo(b) },
                 })
@@ -122,7 +135,10 @@ export class BlkProcessor extends WorkerHost {
 
     @OnWorkerEvent('failed')
     onFailed(job: Job<IBlockData, any, string>) {
+        job.changePriority({ priority: EQueuePriority.Queue })
         this.logger.error(`Job ${job.id} ${job.name.toUpperCase()} Failed`)
-        this.wait = undefined
+        if (job.id === this.wait) {
+            this.wait = undefined
+        }
     }
 }
