@@ -9,15 +9,14 @@ services:
         - node.name=es01
         - http.port=${ELASTIC_PORT}
         - http.host=0.0.0.0
-        - transport.host=0.0.0.0
         - xpack.security.enabled=false
         - xpack.monitoring.collection.enabled=true
         - cluster.name=esc
         #- discovery.type=single-node
         - discovery.seed_hosts=es02,es03
-        # - cluster.initial_master_nodes=es01 # DISABLE AFTER CLUSER HAS FORMED
+        #- cluster.initial_master_nodes=es01,es02,es03 # DISABLE AFTER CLUSER HAS FORMED
         - bootstrap.memory_lock=true
-        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
 
 
     ulimits:
@@ -57,15 +56,14 @@ services:
         - node.name=es02
         - http.port=${ELASTIC_PORT}
         - http.host=0.0.0.0
-        - transport.host=0.0.0.0
         - xpack.security.enabled=false
         - xpack.monitoring.collection.enabled=true
         - cluster.name=esc
         #- discovery.type=single-node
         - discovery.seed_hosts=es01,es03
-        # - cluster.initial_master_nodes=es01 # DISABLE AFTER CLUSER HAS FORMED
+        #- cluster.initial_master_nodes=es01,es02,es03 # DISABLE AFTER CLUSER HAS FORMED
         - bootstrap.memory_lock=true
-        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
 
 
     ulimits:
@@ -102,15 +100,14 @@ services:
         - node.name=es03
         - http.port=${ELASTIC_PORT}
         - http.host=0.0.0.0
-        - transport.host=0.0.0.0
         - xpack.security.enabled=false
         - xpack.monitoring.collection.enabled=true
         - cluster.name=esc
         #- discovery.type=single-node
         - discovery.seed_hosts=es01,es02
-        # - cluster.initial_master_nodes=es01 # DISABLE AFTER CLUSER HAS FORMED
+        #- cluster.initial_master_nodes=es01,es02,es03 # DISABLE AFTER CLUSER HAS FORMED
         - bootstrap.memory_lock=true
-        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
 
 
     ulimits:
@@ -145,7 +142,7 @@ services:
 
     environment:
       - SERVER_NAME=kibana
-      - ELASTICSEARCH_HOSTS=http://es01:9200
+      - ELASTICSEARCH_HOSTS=["http://es01:9200","http://es02:9200","http://es03:9200"]
 
     ports:
       - 5601:5601

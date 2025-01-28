@@ -74,9 +74,11 @@ export class BlkProcessor extends WorkerHost {
         let txCount = 0
 
         for (const b of blk) {
+            const year = b.getUTCDate().getUTCFullYear()
+
             await this.esSearch
                 .create({
-                    index: 'blocks',
+                    index: `blocks-${year}`,
                     id: BlockInfo.getHash(b).hash,
                     document: { ...BlockInfo.getInfo(b) },
                 })

@@ -1,5 +1,5 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq'
-import { EJobQueue, EQueue } from '../../enum/queue.enum'
+import { EQueue } from '../../enum/queue.enum'
 import { Job } from 'bullmq'
 import { Inject, Logger } from '@nestjs/common'
 import { Block } from 'bitcoinjs-lib'
@@ -23,13 +23,20 @@ export class TransactionsProcessor extends WorkerHost {
         await this.esSearch.helpers
             .bulk({
                 datasource: txs,
+                concurrency: 10,
                 onDocument(doc) {
                     job.updateProgress(((txs.length - txDone) / txs.length) * 100)
                     txDone--
 
+                    const month = blk.getUTCDate().getUTCMonth() + 1
+                    const year = blk.getUTCDate().getUTCFullYear()
+
                     return [
                         {
-                            create: { _index: 'transactions', _id: doc.txid },
+                            create: {
+                                _index: `transactions-${year}.${month < 10 ? '0' + month : '' + month}`,
+                                _id: doc.txid,
+                            },
                         },
                         {
                             ...doc,
@@ -47,10 +54,10 @@ export class TransactionsProcessor extends WorkerHost {
         job.updateProgress(100)
     }
 
-    @OnWorkerEvent('completed')
-    onComplete(job: Job<string, any, string>) {
-        this.logger.log(`Job ${job.id} ${job.name.toUpperCase()} Completed`)
-    }
+    // @OnWorkerEvent('completed')
+    // onComplete(job: Job<string, any, string>) {
+    //     this.logger.log(`Job ${job.id} ${job.name.toUpperCase()} Completed`)
+    // }
 
     @OnWorkerEvent('failed')
     onFailed(job: Job<string, any, string>) {
