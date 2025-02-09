@@ -25,10 +25,10 @@ pm2 monit
 ```
 
 ### pm2.blocks.workers.json
-Can be used to start the block wokers concurently. You can adjust the instances for the best setup for your machine, currently its set to 3 block workers.
+Can be used to start the block workers concurrently. You can adjust the instances for the best setup for your machine, currently its set to 3 block workers.
 
 ### pm2.transaction.workers.json
-Can be used to start the transaction workers concurently. You can adjust the instances for the best setup, currently the instances are set to 12 transaction workers.
+Can be used to start the transaction workers concurrently. You can adjust the instances for the best setup, currently the instances are set to 12 transaction workers.
 
 ### pm2.process.workers.json
 This will start both the blocks and transactions workers as configured above with 3 block and 12 transaction workers.
@@ -56,7 +56,7 @@ The api is using the NestJS framework. Zeromq will be used to update elasticsear
 This is the bitcoind full node. Be aware that the current blockchain is over 600 G in size, so make sure you have enough disk space for that. Recommend at least 2T disk space for both bitcoind and elasticsearch DB.
 
 ## Elasticsearch
-This is a 3 node cluster elastic search instance with no security setup. It is advisable to setup the x-pack-security features if you plan on have a public instance. The queues will create 2 indicies called blocks and transactions.
+This is a 3 node cluster elastic search instance with no security setup. It is advisable to setup the x-pack-security features if you plan on have a public instance. The queues will create 2 indices called blocks and transactions.
 
 ### Blocks
 Contain the block information, hash, previous hash, date (timestamp), and number of transactions, bits, size, weight, nonce, inputs, outputs and witness count. index id is the hash of the block
@@ -107,16 +107,16 @@ txis.coinbase: [false, true]
 txis.index: [0, 1]
 txis.id: [aaaaaaaaaaaaa, bbbbbbbbbbbb]
 ```
-The array index 0 refers to txis.index: 0, referes to txis.coinbase: false, and txis.id: aaaaaaaaaaaaa. The same is true for the txos values.
+The array index 0 refers to txis.index: 0, refers to txis.coinbase: false, and txis.id: aaaaaaaaaaaaa. The same is true for the txos values.
 
 ## Kibana
-This is the frontend for exploring the data in elastic search with no security setup. It is advised to setup the x-pack-security features if you plan on having a public accessable instance.
+This is the frontend for exploring the data in elastic search with no security setup. It is advised to setup the x-pack-security features if you plan on having a public accessible instance.
 
 ## Workers
 There are 2 workers setup to process the .dat files.
 
 The main queue EQueue.Block parses the .dat file and pulls out each individual block, parses it, stores the blocks in ElasticSearch DB under the blocks index and passes it to a second queue called EQueue.Transactions
-The EQueue.Transactions queue processes each transaction of the block and will store them in a ElasticSearch DB under the transactions index.
+The EQueue.Transactions queue processes each transaction of the block and will store them in a ElasticSearch DB under the transactions index. Block processing will not necessarily process the blocks in order (ie. blk0001.dat, blk00002.dat...)
 
 Minimum Recommended Queues are 1 block queue to 3 transaction queues.  So if you run two block queues, you should run at lease 6 transaction queues.  You can run 1 block queue to 1 transaction queue, but the processing will take awhile.
 
@@ -143,7 +143,7 @@ The api is built on NestJS using bullmq queues to parse and process the blockcha
 This repo is a work in progress...
 
 ## Learning Points
-Redis was running out of memory due to the fact that blocks were pusing the transactions to the second queue, then processing the next block and repeating.  This causes the second transaction queue to start to fill up before processing all the transactions.
+Redis was running out of memory due to the fact that blocks were pushing the transactions to the second queue, then processing the next block and repeating.  This causes the second transaction queue to start to fill up before processing all the transactions.
 This was solved by setting a wait variable that holds the job id, and delays any new blocks that come into the same queue, this prevents the new blocks from pushing transactions onto the transactions queue.
 
 Split up the transactions and blocks to optimize the elastic search indexing and searching. Blocks are now stored with blocks-YYYY and Transactions-YYYY.MM, to keep the document indexes manageable.
