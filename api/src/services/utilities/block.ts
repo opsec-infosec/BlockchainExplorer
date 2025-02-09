@@ -55,8 +55,8 @@ export class ReadFileBlock {
 
 export class BlockInfo {
     static getHash(blk: Block) {
-        const hash = blk.getHash().reverse().toString('hex')
-        const prevHash = blk.prevHash.reverse().toString('hex')
+        const hash = Buffer.from(blk.getHash()).reverse().toString('hex')
+        const prevHash = Buffer.from(blk.prevHash).reverse().toString('hex')
 
         return { hash, prevHash }
     }
@@ -69,8 +69,35 @@ export class BlockInfo {
         const hashes = this.getHash(blk)
         const blockDate = blk.getUTCDate()
         const txCount = blk.transactions.length
+        const nonce = blk.nonce
+        const bits = blk.bits
+        const size = blk.byteLength()
+        const weight = size * 3 + size
 
-        return { ...hashes, blockDate, txCount }
+        let inputs = 0
+        let outputs = 0
+        let witness = 0
+
+        blk.transactions.forEach((data) => {
+            inputs += data.ins.length
+            outputs += data.outs.length
+            if (data.hasWitnesses()) {
+                witness++
+            }
+        })
+
+        return {
+            ...hashes,
+            blockDate,
+            txCount,
+            nonce,
+            bits,
+            size,
+            weight,
+            inputs,
+            outputs,
+            witness,
+        }
     }
 
     static getTransactions(blk: Block) {
