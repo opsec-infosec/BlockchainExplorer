@@ -6,6 +6,7 @@ import { Block } from 'bitcoinjs-lib'
 import { EsSearchService } from '../elasticsearch/elasticsearch.service'
 import { ElasticsearchService } from '@nestjs/elasticsearch'
 import { BlockInfo } from '../utilities/block'
+import { IBlockTransactionData } from '../../interfaces/block.interface'
 
 @Processor(EQueue.Transactions)
 export class TransactionsProcessor extends WorkerHost {
@@ -14,22 +15,23 @@ export class TransactionsProcessor extends WorkerHost {
         super()
     }
 
-    async process(job: Job<string, any, any>) {
-        const blk = Block.fromHex(job.data)
+    async process(job: Job<IBlockTransactionData, any, any>) {
+        const blk = Block.fromHex(job.data.block)
 
         const txs = BlockInfo.getTransactions(blk)
+
+        const blkDate = new Date(job.data.blockInfo.blockDate)
+        const month = blkDate.getUTCMonth() + 1
+        const year = blkDate.getUTCFullYear()
 
         let txDone = txs.length
         await this.esSearch.helpers
             .bulk({
                 datasource: txs,
-                concurrency: 10,
+                concurrency: 1,
                 onDocument(doc) {
                     job.updateProgress(((txs.length - txDone) / txs.length) * 100)
                     txDone--
-
-                    const month = blk.getUTCDate().getUTCMonth() + 1
-                    const year = blk.getUTCDate().getUTCFullYear()
 
                     return [
                         {
@@ -40,8 +42,11 @@ export class TransactionsProcessor extends WorkerHost {
                         },
                         {
                             ...doc,
-                            block: { ...BlockInfo.getHash(blk) },
-                            blockDate: BlockInfo.getDate(blk),
+                            block: {
+                                hash: job.data.blockInfo.hash,
+                                prevHash: job.data.blockInfo.prevHash,
+                                date: job.data.blockInfo.blockDate,
+                            },
                         },
                     ]
                 },

@@ -75,12 +75,13 @@ export class BlkProcessor extends WorkerHost {
 
         for (const b of blk) {
             const year = b.getUTCDate().getUTCFullYear()
+            const blkInfo = BlockInfo.getInfo(b)
 
             await this.esSearch
                 .create({
                     index: `blocks-${year}`,
-                    id: BlockInfo.getHash(b).hash,
-                    document: { ...BlockInfo.getInfo(b) },
+                    id: blkInfo.hash,
+                    document: { ...blkInfo },
                 })
                 .catch((ex) => {
                     // if we encounter a 409, it means that a block with this hash is already in elasticsearch
@@ -93,15 +94,26 @@ export class BlkProcessor extends WorkerHost {
                 })
                 .then(async (data) => {
                     if (data) {
-                        this.transactions.add(EJobQueue.TransactionParse, b.toHex(), {
-                            jobId: b.getId(),
-                            parent: {
-                                id: job.id,
-                                queue: job.queueQualifiedName,
+                        this.transactions.add(
+                            EJobQueue.TransactionParse,
+                            {
+                                blockInfo: {
+                                    hash: blkInfo.hash,
+                                    prevHash: blkInfo.prevHash,
+                                    blockDate: blkInfo.blockDate,
+                                },
+                                block: b.toHex(),
                             },
-                            removeOnComplete: true,
-                            removeOnFail: 500,
-                        })
+                            {
+                                jobId: b.getId(),
+                                parent: {
+                                    id: job.id,
+                                    queue: job.queueQualifiedName,
+                                },
+                                removeOnComplete: true,
+                                removeOnFail: 500,
+                            },
+                        )
 
                         txCount++
                     }

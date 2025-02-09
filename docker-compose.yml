@@ -14,7 +14,7 @@ services:
         - cluster.name=esc
         #- discovery.type=single-node
         - discovery.seed_hosts=es02,es03
-        #- cluster.initial_master_nodes=es01,es02,es03 # DISABLE AFTER CLUSER HAS FORMED
+        - cluster.initial_master_nodes=es01,es02,es03 # DISABLE AFTER CLUSER HAS FORMED
         - bootstrap.memory_lock=true
         - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
 
@@ -61,7 +61,7 @@ services:
         - cluster.name=esc
         #- discovery.type=single-node
         - discovery.seed_hosts=es01,es03
-        #- cluster.initial_master_nodes=es01,es02,es03 # DISABLE AFTER CLUSER HAS FORMED
+        - cluster.initial_master_nodes=es01,es02,es03 # DISABLE AFTER CLUSER HAS FORMED
         - bootstrap.memory_lock=true
         - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
 
@@ -105,7 +105,7 @@ services:
         - cluster.name=esc
         #- discovery.type=single-node
         - discovery.seed_hosts=es01,es02
-        #- cluster.initial_master_nodes=es01,es02,es03 # DISABLE AFTER CLUSER HAS FORMED
+        - cluster.initial_master_nodes=es01,es02,es03 # DISABLE AFTER CLUSER HAS FORMED
         - bootstrap.memory_lock=true
         - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
 

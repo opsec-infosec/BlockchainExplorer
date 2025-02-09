@@ -61,7 +61,7 @@ export class QueueService {
                     priority: EQueuePriority.Queue,
                     removeOnComplete: false,
                     removeOnFail: 500,
-                    delay: 10000,
+                    delay: 30000,
                     attempts: 10,
                     backoff: {
                         type: 'exponential',

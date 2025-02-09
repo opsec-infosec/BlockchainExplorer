@@ -27,3 +27,17 @@ export interface IBlockInfo {
     blockDate: Date
     txCount: number
 }
+
+export interface IBlockHeader {
+    version: number
+    prevHash: Buffer
+    merkleRoot: Buffer
+    timestamp: number
+    bits: number
+    nonce: number
+}
+
+export interface IBlockTransactionData {
+    blockInfo: IBlockInfo
+    block: string
+}
