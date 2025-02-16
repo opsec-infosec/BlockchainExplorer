@@ -1,6 +1,6 @@
 import { InjectQueue, OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq'
 import { DelayedError, Job, Queue, WaitingChildrenError } from 'bullmq'
-import { Inject, Logger } from '@nestjs/common'
+import { Inject, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { readFileSync } from 'fs'
 import { BlockInfo, ReadFileBlock } from '../utilities/block'
@@ -8,12 +8,16 @@ import { EJobQueue, EQueue, EQueuePriority } from '../../enum/queue.enum'
 import { ElasticsearchService } from '@nestjs/elasticsearch'
 import { EsSearchService } from '../elasticsearch/elasticsearch.service'
 import { IBlockData } from '../../interfaces/queue.interface'
+import { clearInterval, setInterval } from 'timers'
 
 @Processor(EQueue.Block)
-export class BlkProcessor extends WorkerHost {
+export class BlkProcessor extends WorkerHost implements OnModuleDestroy, OnModuleInit {
     private dataPath = this.configService.getOrThrow('DATA_PATH')
+    private redisAllowedMem = Number(this.configService.get('REDIS_MEM', 5))
     private logger = new Logger(`BlockProcessor`)
-    private wait = undefined
+
+    private redisMemoryConsumed: number
+    private interval: NodeJS.Timeout
 
     constructor(
         private readonly configService: ConfigService,
@@ -24,38 +28,15 @@ export class BlkProcessor extends WorkerHost {
     }
 
     async process(job: Job<IBlockData, any, any>, token?: string) {
-        if (job.data.complete) {
-            if (
-                this.wait === job.id ||
-                (job.data.timestamp && Date.now() - job.data.timestamp >= 600000)
-            ) {
-                this.logger.log(
-                    `Job ${job.id} ${job.name.toUpperCase()} Transactions and Block Complete`,
-                )
-                job.updateProgress(100)
-                return
-            } else {
-                if (!job.data.timestamp) {
-                    job.updateData({
-                        file: job.data.file,
-                        complete: job.data.complete,
-                        timestamp: Date.now(),
-                    })
-                }
+        const jobDependencies = await job.getDependenciesCount()
 
-                await job.changePriority({ priority: EQueuePriority.Completed })
-                job.moveToDelayed(Date.now())
-                throw new DelayedError()
-            }
+        if (!jobDependencies.unprocessed && jobDependencies.processed) {
+            job.updateProgress(100)
+            return
         }
 
-        if (this.wait) {
-            if (job.failedReason) {
-                throw new Error(job.failedReason)
-            }
-
-            const seconds = this.randomSeconds(5, 30) * 1000
-            job.moveToDelayed(Date.now() + seconds, token)
+        if (this.redisMemoryConsumed >= this.redisAllowedMem) {
+            job.moveToDelayed(Date.now(), token)
             throw new DelayedError()
         }
 
@@ -74,26 +55,38 @@ export class BlkProcessor extends WorkerHost {
         let txCount = 0
 
         for (const b of blk) {
-            const year = b.getUTCDate().getUTCFullYear()
             const blkInfo = BlockInfo.getInfo(b)
 
             await this.esSearch
-                .create({
-                    index: `blocks-${year}`,
+                .update({
+                    index: `blocks`,
                     id: blkInfo.hash,
-                    document: { ...blkInfo },
+                    doc: { ...blkInfo },
+                    doc_as_upsert: true,
+                    detect_noop: true,
                 })
                 .catch((ex) => {
-                    // if we encounter a 409, it means that a block with this hash is already in elasticsearch
-                    if (ex?.body?.status === 409) {
-                        return undefined
-                    }
-
                     this.logger.error('Failed to update Elastic Search: ', ex)
                     throw new Error(ex)
                 })
                 .then(async (data) => {
-                    if (data) {
+                    if (data?.result !== 'noop') {
+                        if (
+                            blkInfo.prevHash !==
+                            '0000000000000000000000000000000000000000000000000000000000000000'
+                        ) {
+                            await this.esSearch
+                                .update({
+                                    index: `blocks`,
+                                    id: blkInfo.prevHash,
+                                    doc: { nextHash: blkInfo.hash },
+                                    doc_as_upsert: true,
+                                })
+                                .catch((ex) => {
+                                    this.logger.error(`Error Updating Document: ${ex.message}`)
+                                })
+                        }
+
                         this.transactions.add(
                             EJobQueue.TransactionParse,
                             {
@@ -112,6 +105,7 @@ export class BlkProcessor extends WorkerHost {
                                 },
                                 removeOnComplete: true,
                                 removeOnFail: 500,
+                                delay: txCount ? 0 : 1000,
                             },
                         )
 
@@ -123,10 +117,9 @@ export class BlkProcessor extends WorkerHost {
         }
 
         if (txCount) {
-            await job.updateData({ complete: true, file: job.data.file })
+            await job.updateData({ file: job.data.file, workerId: this.worker.id })
             await job.changePriority({ priority: EQueuePriority.Processed })
             await job.moveToWaitingChildren(token)
-            this.wait = job.id
 
             this.logger.log(
                 `Job ${job.id} ${job.name.toUpperCase()} Waiting for Transactions to Complete`,
@@ -135,22 +128,48 @@ export class BlkProcessor extends WorkerHost {
         }
     }
 
-    private randomSeconds(min: number, max: number) {
-        return Math.floor(Math.random() * (max - min + 1) + min)
+    private async checkRedisMem() {
+        const redisClient = await this.transactions.client.catch((ex) => {
+            throw ex
+        })
+
+        const clientMemory = await redisClient.info('memory').catch((ex) => {
+            throw ex
+        })
+
+        const usedMemory = parseInt(clientMemory.match(/used_memory:(\d+)/)[1], 10)
+        const sysMemory = parseInt(clientMemory.match(/system_memory:(\d+)/)[1], 10)
+        const percentUsage = usedMemory / sysMemory
+
+        return percentUsage * 100
     }
 
     @OnWorkerEvent('completed')
     onCompleted(job: Job<IBlockData, any, string>) {
-        this.logger.log(`Job ${job.id} ${job.name.toUpperCase()} Completed`)
-        this.wait = undefined
+        this.logger.log(`Job ${job.id} ${job.name.toUpperCase()} Transactions and Block Complete`)
     }
 
     @OnWorkerEvent('failed')
     onFailed(job: Job<IBlockData, any, string>) {
-        job.changePriority({ priority: EQueuePriority.Queue })
+        job.changePriority({ priority: EQueuePriority.Failed })
         this.logger.error(`Job ${job.id} ${job.name.toUpperCase()} Failed`)
-        if (job.id === this.wait) {
-            this.wait = undefined
+    }
+
+    onModuleDestroy() {
+        if (this.interval) {
+            clearInterval(this.interval)
         }
+    }
+
+    async onModuleInit() {
+        this.redisMemoryConsumed = await this.checkRedisMem()
+        this.logger.debug(`Redis Mem Used: ${this.redisMemoryConsumed.toFixed(2)}%`)
+
+        this.interval = setInterval(async () => {
+            this.redisMemoryConsumed = await this.checkRedisMem().catch((ex) => {
+                return this.redisAllowedMem
+            })
+            this.logger.debug(`Redis Mem Used: ${this.redisMemoryConsumed.toFixed(2)}%`)
+        }, 30000)
     }
 }

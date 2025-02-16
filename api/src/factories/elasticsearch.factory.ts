@@ -1,10 +1,13 @@
 import { ConfigService } from '@nestjs/config'
 
+// request timeout set per:
+// https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/timeout-best-practices.html
+
 export const elasticSearcFactory = async (config: ConfigService) => {
     return {
         nodes: config.getOrThrow<string>('ELASTIC_HOSTS').split(','),
         maxRetries: Number(config.get<number>('ELASTIC_RETRIES', 10)),
-        requestTimeout: Number(config.get<number>('ELASTIC_REQ_TIMEOUT', 60000)),
+        requestTimeout: Number(config.get<number>('ELASTIC_REQ_TIMEOUT', 86400000)),
         pingTimeout: Number(config.get<number>('ELASTIC_PING_TIMEOUT', 60000)),
         sniffOnStart:
             String(config.get<boolean>('ELASTIC_SNIFF', true)).toLocaleLowerCase() == 'true',
@@ -21,7 +24,7 @@ export class elasticSearchConfig {
         this.esConfig = {
             nodes: this.config.getOrThrow<string>('ELASTIC_HOSTS').split(','),
             maxRetries: Number(this.config.get<number>('ELASTIC_RETRIES', 10)),
-            requestTimeout: Number(this.config.get<number>('ELASTIC_REQ_TIMEOUT', 60000)),
+            requestTimeout: Number(this.config.get<number>('ELASTIC_REQ_TIMEOUT', 86400000)),
             pingTimeout: Number(this.config.get<number>('ELASTIC_PING_TIMEOUT', 60000)),
             sniffOnStart:
                 String(this.config.get<boolean>('ELASTIC_SNIFF', true)).toLocaleLowerCase() ==

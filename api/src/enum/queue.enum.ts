@@ -9,7 +9,7 @@ export enum EQueue {
 }
 
 export enum EQueuePriority {
-    Completed,
+    Failed,
     Processed,
-    Queue
+    Queue,
 }

@@ -4,7 +4,8 @@
             "name": "Blocks",
             "script": "dist/blocks.js",
             "autorestart": true,
-            "instances": 3
+            "instances": 3,
+            "delay": 3000
         }
     ]
 }

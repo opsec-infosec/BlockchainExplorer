@@ -28,7 +28,7 @@ export class TransactionsProcessor extends WorkerHost {
         await this.esSearch.helpers
             .bulk({
                 datasource: txs,
-                concurrency: 1,
+                concurrency: 5,
                 onDocument(doc) {
                     job.updateProgress(((txs.length - txDone) / txs.length) * 100)
                     txDone--
@@ -49,6 +49,14 @@ export class TransactionsProcessor extends WorkerHost {
                             },
                         },
                     ]
+                },
+                onDrop(doc) {
+                    if (doc?.status != 409) {
+                        new Logger('TransactionProcessor').error(
+                            `Failed to create Document: ${doc.error.reason}`,
+                        )
+                        throw new Error(doc.error.reason)
+                    }
                 },
             })
             .catch((ex) => {

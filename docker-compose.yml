@@ -13,8 +13,8 @@ services:
         - xpack.monitoring.collection.enabled=true
         - cluster.name=esc
         #- discovery.type=single-node
-        - discovery.seed_hosts=es02,es03
-        - cluster.initial_master_nodes=es01,es02,es03 # DISABLE AFTER CLUSER HAS FORMED
+        - discovery.seed_hosts=es02,es03,es04,es05
+        - cluster.initial_master_nodes=es01,es02,es03,es04,es05 # DISABLE AFTER CLUSTER HAS FORMED
         - bootstrap.memory_lock=true
         - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
 
@@ -60,8 +60,8 @@ services:
         - xpack.monitoring.collection.enabled=true
         - cluster.name=esc
         #- discovery.type=single-node
-        - discovery.seed_hosts=es01,es03
-        - cluster.initial_master_nodes=es01,es02,es03 # DISABLE AFTER CLUSER HAS FORMED
+        - discovery.seed_hosts=es01,es03,es04,es05
+        - cluster.initial_master_nodes=es01,es02,es03,es04,es05 # DISABLE AFTER CLUSTER HAS FORMED
         - bootstrap.memory_lock=true
         - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
 
@@ -104,8 +104,8 @@ services:
         - xpack.monitoring.collection.enabled=true
         - cluster.name=esc
         #- discovery.type=single-node
-        - discovery.seed_hosts=es01,es02
-        - cluster.initial_master_nodes=es01,es02,es03 # DISABLE AFTER CLUSER HAS FORMED
+        - discovery.seed_hosts=es01,es02,es04,es05
+        - cluster.initial_master_nodes=es01,es02,es03,es04,es05 # DISABLE AFTER CLUSTER HAS FORMED
         - bootstrap.memory_lock=true
         - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
 
@@ -136,13 +136,103 @@ services:
       retries: 120
       start_period: 10s
 
+  es04:
+    container_name: es04
+    image: elasticsearch:8.16.0
+
+    environment:
+        - node.name=es04
+        - http.port=${ELASTIC_PORT}
+        - http.host=0.0.0.0
+        - xpack.security.enabled=false
+        - xpack.monitoring.collection.enabled=true
+        - cluster.name=esc
+        #- discovery.type=single-node
+        - discovery.seed_hosts=es01,es02,es03,es05
+        - cluster.initial_master_nodes=es01,es02,es03,es04,es05 # DISABLE AFTER CLUSTER HAS FORMED
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+
+
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+    expose:
+      - 9200
+      - 9300
+
+    networks:
+      - esn
+
+    volumes:
+      - data-es04:/usr/share/elasticsearch/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail -u elastic:${ELASTIC_PASSWORD}  http://es04:9200",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+      start_period: 10s
+
+  es05:
+    container_name: es05
+    image: elasticsearch:8.16.0
+
+    environment:
+        - node.name=es05
+        - http.port=${ELASTIC_PORT}
+        - http.host=0.0.0.0
+        - xpack.security.enabled=false
+        - xpack.monitoring.collection.enabled=true
+        - cluster.name=esc
+        #- discovery.type=single-node
+        - discovery.seed_hosts=es01,es02,es03,es04
+        - cluster.initial_master_nodes=es01,es02,es03,es04,es05 # DISABLE AFTER CLUSTER HAS FORMED
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+
+
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+    expose:
+      - 9200
+      - 9300
+
+    networks:
+      - esn
+
+    volumes:
+      - data-es05:/usr/share/elasticsearch/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail -u elastic:${ELASTIC_PASSWORD}  http://es05:9200",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+      start_period: 10s
+
+
+
   kibana:
     container_name: kibana
     image: kibana:8.16.0
 
     environment:
       - SERVER_NAME=kibana
-      - ELASTICSEARCH_HOSTS=["http://es01:9200","http://es02:9200","http://es03:9200"]
+      - ELASTICSEARCH_HOSTS=["http://es01:9200","http://es02:9200","http://es03:9200","http://es04:9200","http://es05:9200"]
 
     ports:
       - 5601:5601
@@ -160,6 +250,10 @@ services:
       es02:
         condition: service_healthy
       es03:
+        condition: service_healthy
+      es04:
+        condition: service_healthy
+      es05:
         condition: service_healthy
 
 
@@ -190,7 +284,8 @@ services:
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
-      - ELASTIC_HOSTS=http://es01:${ELASTIC_PORT}
+      - REDIS_MEM=${REDIS_MEM}
+      - ELASTIC_HOSTS=${ELASTIC_HOSTS}
       - DATA_PATH=${DATA_PATH}
       - LATEST_FIRST=${LATEST_FIRST}
       - NODE_ENV=development
@@ -211,6 +306,16 @@ services:
     depends_on:
       bitcoind:
         condition: service_started
+      es01:
+        condition: service_healthy
+      es02:
+        condition: service_healthy
+      es03:
+        condition: service_healthy
+      es04:
+        condition: service_healthy
+      es05:
+        condition: service_healthy
 
     # Uncomment the next four lines if you will use a ptrace-based debugger like C++, Go, and Rust.
     # cap_add:
@@ -255,4 +360,6 @@ volumes:
   data-es01:
   data-es02:
   data-es03:
+  data-es04:
+  data-es05:
   data-kibana:
