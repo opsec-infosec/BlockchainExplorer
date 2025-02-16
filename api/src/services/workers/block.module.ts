@@ -1,4 +1,4 @@
-import { Inject, Module, OnModuleDestroy } from '@nestjs/common'
+import { Inject, Module } from '@nestjs/common'
 import { BullModule } from '@nestjs/bullmq'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { redisFactory } from '../../factories/redis.factory'

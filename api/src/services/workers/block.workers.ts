@@ -163,13 +163,11 @@ export class BlkProcessor extends WorkerHost implements OnModuleDestroy, OnModul
 
     async onModuleInit() {
         this.redisMemoryConsumed = await this.checkRedisMem()
-        this.logger.debug(`Redis Mem Used: ${this.redisMemoryConsumed.toFixed(2)}%`)
 
         this.interval = setInterval(async () => {
             this.redisMemoryConsumed = await this.checkRedisMem().catch((ex) => {
                 return this.redisAllowedMem
             })
-            this.logger.debug(`Redis Mem Used: ${this.redisMemoryConsumed.toFixed(2)}%`)
         }, 30000)
     }
 }

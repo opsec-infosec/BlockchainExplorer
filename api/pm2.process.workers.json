@@ -5,13 +5,19 @@
             "script": "dist/blocks.js",
             "autorestart": true,
             "instances": 3,
-            "delay": 3000
+            "delay": 3000,
+            "env": {
+                "NODE_ENV": "production"
+            }
         },
         {
             "name": "Transactions",
             "script": "dist/transactions.js",
             "autorestart": true,
-            "instances": 12
+            "instances": 12,
+            "env": {
+                "NODE_ENV": "production"
+            }
         }
     ]
 }
